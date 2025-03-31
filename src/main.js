@@ -29,7 +29,7 @@ const debugParams = {
 // --- Загрузчик EXR для карты окружения ---
 const exrLoader = new EXRLoader();
 exrLoader.load(
-    '/textures/GSG_ProStudiosMetal_Vol2_24_Env_sm.exr', // <-- УБЕДИТЕСЬ, что путь ВЕРНЫЙ
+    'textures/GSG_ProStudiosMetal_Vol2_24_Env_sm.exr', // <-- УБЕДИТЕСЬ, что путь ВЕРНЫЙ
     ( environmentMap ) => {
         environmentMap.mapping = THREE.EquirectangularReflectionMapping; // <-- Важно для карт окружения
 
@@ -131,7 +131,7 @@ const modelFolder = gui.addFolder('Модель');
 let modelAnimationTarget = { rotationX: 0, rotationY: 0 };
 
 gltfLoader.load(
-    '/models/crown.gltf', // <-- УБЕДИТЕСЬ, что путь к МОДЕЛИ верный
+    'models/crown.gltf', // <-- УБЕДИТЕСЬ, что путь к МОДЕЛИ верный
     (gltf) => {
         console.log('Модель успешно загружена');
         model = gltf.scene;
