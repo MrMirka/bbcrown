@@ -1,0 +1,20 @@
+{
+  "name": "crown",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "deploy": "vite build && gh-pages -d dist",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^6.2.0"
+  },
+  "dependencies": {
+    "gh-pages": "^6.3.0",
+    "gsap": "^3.12.7",
+    "lil-gui": "^0.20.0",
+    "three": "^0.174.0"
+  }
+}

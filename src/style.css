@@ -1,0 +1,22 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box; /* Добавлено для лучшего контроля размеров */
+}
+
+html,
+body {
+  overflow: hidden; /* Убираем скроллбары */
+  height: 100%; /* Занимаем всю высоту */
+  width: 100%; /* Занимаем всю ширину */
+}
+
+.webgl {
+  position: fixed; /* Или absolute */
+  top: 0;
+  left: 0;
+  outline: none;
+  display: block; /* Убирает возможное пространство под canvas */
+  width: 100%;
+  height: 100%;
+}
