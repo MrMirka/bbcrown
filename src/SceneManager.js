@@ -1,218 +1,171 @@
-// src/SceneManager.js
+// SceneManager.js
 import * as THREE from 'three';
 import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader.js';
-// --- УДАЛЕНО: import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DirectionalLightHelper } from 'three';
 import GUI from 'lil-gui';
 
 export class SceneManager {
-    constructor(canvas, gui) {
-        this.canvas = canvas;
-        this.gui = gui;
-        this.scene = null;
-        this.camera = null;
-        this.renderer = null;
-        // --- УДАЛЕНО: this.controls = null;
-        this.ambientLight = null;
-        this.directionalLight = null;
-        this.directionalLightHelper = null;
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.scene = new THREE.Scene();
+    // Темный фон, поскольку EXR будет использоваться для освещения/отражений
+    this.scene.background = new THREE.Color(0x111111);
 
-        this.sizes = {
-            width: window.innerWidth,
-            height: window.innerHeight
-        };
+    this.gui = new GUI();
+    this.gui.title("Настройки Сцены");
 
-        this.debugParams = {
-            environmentMapIntensity: 1.5,
-            ambientLightIntensity: 0.2,
-            directionalLightIntensity: 0.8,
-            bgColor: 0x111111,
-        };
+    this.debugParams = {
+      environmentMapIntensity: 1.0,
+      ambientLightIntensity: 0.2,
+      directionalLightIntensity: 0.5,
+    };
 
-        // Папки GUI остаются для других настроек
-        this.sceneFolder = this.gui.addFolder('Настройки Сцены');
-        this.renderingFolder = this.gui.addFolder('Рендеринг');
-        this.lightFolder = this.gui.addFolder('Источники света');
-    }
+    this.sizes = {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+  }
 
-    async init() {
-        this.setupScene();
-        this.setupCamera();
-        this.setupRenderer();
-        this.setupLights();
-        // Важно дождаться загрузки карты окружения
-        await this.loadEnvironmentMap('textures/GSG_ProStudiosMetal_Vol2_24_Env_sm.exr');
-        // --- УДАЛЕНО: Вызов this.setupControls();
-        this.setupGUI(); // Настройка GUI для сцены, рендеринга, света
-        this.setupResizeListener();
+  initCamera() {
+    this.camera = new THREE.PerspectiveCamera(
+      75,
+      this.sizes.width / this.sizes.height,
+      0.1,
+      100
+    );
+    this.camera.position.set(0, 1, 4);
+    this.scene.add(this.camera);
+  }
 
-        console.log("SceneManager initialized (without OrbitControls)"); // Обновили лог
-    }
+  initRenderer() {
+    this.renderer = new THREE.WebGLRenderer({
+      canvas: this.canvas,
+      antialias: true,
+    });
+    this.renderer.setSize(this.sizes.width, this.sizes.height);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.outputEncoding = THREE.sRGBEncoding;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = this.debugParams.environmentMapIntensity;
+    this.renderer.physicallyCorrectLights = true;
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  }
 
-    setupScene() {
-        this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(this.debugParams.bgColor);
-    }
+  initLights() {
+    // Ambient Light
+    this.ambientLight = new THREE.AmbientLight(0xffffff, this.debugParams.ambientLightIntensity);
+    this.scene.add(this.ambientLight);
 
-    setupCamera() {
-        this.camera = new THREE.PerspectiveCamera(75, this.sizes.width / this.sizes.height, 0.1, 100);
-        // Камера теперь статична, позиционируем её для хорошего обзора
-        this.camera.position.set(0, 1, 4); // Оставляем как было, можно подстроить
-        // camera.lookAt(new THREE.Vector3(0, 0, 0)); // Можно явно указать точку взгляда
-        this.scene.add(this.camera);
-    }
+    // Directional Light
+    this.directionalLight = new THREE.DirectionalLight(0xffffff, this.debugParams.directionalLightIntensity);
+    this.directionalLight.position.set(3, 4, 5);
+    this.directionalLight.castShadow = true;
+    this.directionalLight.shadow.mapSize.width = 1024;
+    this.directionalLight.shadow.mapSize.height = 1024;
+    this.directionalLight.shadow.camera.near = 0.5;
+    this.directionalLight.shadow.camera.far = 20;
+    this.scene.add(this.directionalLight);
 
-    setupRenderer() {
-        this.renderer = new THREE.WebGLRenderer({
-            canvas: this.canvas,
-            antialias: true
-        });
-        this.renderer.setSize(this.sizes.width, this.sizes.height);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        this.renderer.outputEncoding = THREE.sRGBEncoding;
-        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = this.debugParams.environmentMapIntensity;
-        this.renderer.physicallyCorrectLights = true;
-        this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    }
+    // Helper для направленного света
+    this.directionalLightHelper = new DirectionalLightHelper(this.directionalLight, 0.5, 0xffff00);
+    this.scene.add(this.directionalLightHelper);
+  }
 
-    setupLights() {
-        // Ambient Light
-        this.ambientLight = new THREE.AmbientLight(0xffffff, this.debugParams.ambientLightIntensity);
-        this.scene.add(this.ambientLight);
+  initGUI() {
+    // GUI для источников света
+    const lightFolder = this.gui.addFolder('Источники света (Дополнительные)');
 
-        // Directional Light
-        this.directionalLight = new THREE.DirectionalLight(0xffffff, this.debugParams.directionalLightIntensity);
-        this.directionalLight.position.set(3, 4, 5);
-        this.directionalLight.castShadow = true;
-        this.directionalLight.shadow.mapSize.width = 1024;
-        this.directionalLight.shadow.mapSize.height = 1024;
-        this.directionalLight.shadow.camera.near = 0.5;
-        this.directionalLight.shadow.camera.far = 20;
-        this.scene.add(this.directionalLight);
+    const ambientFolder = lightFolder.addFolder('Общий свет (Ambient)');
+    ambientFolder.add(this.debugParams, 'ambientLightIntensity')
+      .min(0).max(2).step(0.01)
+      .name('Интенсивность')
+      .onChange(() => this.ambientLight.intensity = this.debugParams.ambientLightIntensity);
+    ambientFolder.addColor(this.ambientLight, 'color').name('Цвет');
 
-        this.directionalLightHelper = new DirectionalLightHelper(this.directionalLight, 0.5, 0xffff00);
-        this.directionalLightHelper.visible = false;
-        this.scene.add(this.directionalLightHelper);
-    }
+    const directionalFolder = lightFolder.addFolder('Направленный свет (Directional)');
+    directionalFolder.add(this.debugParams, 'directionalLightIntensity')
+      .min(0).max(5).step(0.01)
+      .name('Интенсивность')
+      .onChange(() => this.directionalLight.intensity = this.debugParams.directionalLightIntensity);
+    directionalFolder.add(this.directionalLight, 'visible').name('Включен');
+    directionalFolder.addColor(this.directionalLight, 'color').name('Цвет');
+    directionalFolder.add(this.directionalLightHelper, 'visible').name('Показать хелпер');
 
-    async loadEnvironmentMap(path) {
-        const exrLoader = new EXRLoader();
-        try {
-            const environmentMap = await exrLoader.loadAsync(path);
-            environmentMap.mapping = THREE.EquirectangularReflectionMapping;
-            this.scene.environment = environmentMap;
-            // Убедимся, что renderer уже создан перед установкой exposure
-            if (this.renderer) {
-                 this.renderer.toneMappingExposure = this.debugParams.environmentMapIntensity;
-            }
-            console.log('Карта окружения EXR загружена и применена.');
+    const directionalPositionFolder = directionalFolder.addFolder('Положение источника');
+    directionalPositionFolder.add(this.directionalLight.position, 'x').min(-20).max(20).step(0.1).name('X');
+    directionalPositionFolder.add(this.directionalLight.position, 'y').min(-20).max(20).step(0.1).name('Y');
+    directionalPositionFolder.add(this.directionalLight.position, 'z').min(-20).max(20).step(0.1).name('Z');
 
-            // Добавляем контроль GUI только если он еще не существует
-            // (Полезно при HMR - Hot Module Replacement во время разработки)
-             if (this.renderingFolder && !this.renderingFolder.controllers.find(c => c.property === 'environmentMapIntensity')) {
-                this.renderingFolder.add(this.debugParams, 'environmentMapIntensity')
-                   .min(0).max(5).step(0.01)
-                   .name('Яркость окружения (exp)')
-                   .onChange(() => {
-                       if(this.renderer) { // Доп. проверка
-                          this.renderer.toneMappingExposure = this.debugParams.environmentMapIntensity;
-                       }
-                   });
-            }
+    lightFolder.close();
 
-        } catch (error) {
-            console.error('Ошибка загрузки EXR карты окружения:', error);
-        }
-    }
+    // GUI для рендеринга
+    const renderingFolder = this.gui.addFolder('Рендеринг');
+    renderingFolder.add(this.debugParams, 'environmentMapIntensity')
+      .min(0).max(5).step(0.01)
+      .name('Яркость окружения (exp)')
+      .onChange(() => this.renderer.toneMappingExposure = this.debugParams.environmentMapIntensity);
+  }
 
-    // --- УДАЛЕНО: Метод setupControls() ---
-    // setupControls() { ... }
+  initEnvironment() {
+    const exrLoader = new EXRLoader();
+    exrLoader.load(
+      'textures/GSG_ProStudiosMetal_Vol2_24_Env_sm.exr',
+      (environmentMap) => {
+        environmentMap.mapping = THREE.EquirectangularReflectionMapping;
+        this.scene.environment = environmentMap;
+        console.log('Карта окружения EXR загружена и применена.');
+      },
+      undefined,
+      (error) => {
+        console.error('Ошибка загрузки EXR карты окружения:', error);
+      }
+    );
+  }
 
-    setupGUI() {
-        // Добавляем проверки, чтобы не дублировать контролы при HMR
-        if (!this.sceneFolder.controllers.find(c => c.property === 'bgColor')) {
-            this.sceneFolder.addColor(this.debugParams, 'bgColor').name('Цвет фона')
-                 .onChange(value => {
-                     if(this.scene) this.scene.background.set(value);
-                 });
-        }
+  initResize() {
+    window.addEventListener('resize', () => {
+      this.sizes.width = window.innerWidth;
+      this.sizes.height = window.innerHeight;
+      this.camera.aspect = this.sizes.width / this.sizes.height;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(this.sizes.width, this.sizes.height);
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    });
+  }
 
-        // Проверяем существование папок перед добавлением
-        let ambientFolder = this.lightFolder.folders.find(f => f._title === 'Общий свет (Ambient)');
-        if (!ambientFolder) {
-            ambientFolder = this.lightFolder.addFolder('Общий свет (Ambient)');
-            ambientFolder.add(this.debugParams, 'ambientLightIntensity')
-                         .min(0).max(2).step(0.01).name('Интенсивность')
-                         .onChange(() => { if(this.ambientLight) this.ambientLight.intensity = this.debugParams.ambientLightIntensity; });
-            ambientFolder.addColor(this.ambientLight, 'color').name('Цвет');
-        }
+  animate(tickCallback) {
+    const clock = new THREE.Clock();
 
-        let directionalFolder = this.lightFolder.folders.find(f => f._title === 'Направленный свет (Directional)');
-        if (!directionalFolder) {
-             directionalFolder = this.lightFolder.addFolder('Направленный свет (Directional)');
-             directionalFolder.add(this.debugParams, 'directionalLightIntensity')
-                             .min(0).max(5).step(0.01).name('Интенсивность')
-                             .onChange(() => { if(this.directionalLight) this.directionalLight.intensity = this.debugParams.directionalLightIntensity });
-             directionalFolder.add(this.directionalLight, 'visible').name('Включен');
-             directionalFolder.addColor(this.directionalLight, 'color').name('Цвет');
-             directionalFolder.add(this.directionalLightHelper, 'visible').name('Показать хелпер');
-             const dirPosFolder = directionalFolder.addFolder('Положение источника');
-             dirPosFolder.add(this.directionalLight.position, 'x').min(-20).max(20).step(0.1);
-             dirPosFolder.add(this.directionalLight.position, 'y').min(-20).max(20).step(0.1);
-             dirPosFolder.add(this.directionalLight.position, 'z').min(-20).max(20).step(0.1);
-        }
-    }
+    const tick = () => {
+      const elapsedTime = clock.getElapsedTime();
 
-    setupResizeListener() {
-        // Удаляем предыдущий листенер, чтобы избежать дублирования при HMR
-        window.removeEventListener('resize', this.onResizeBound);
-        this.onResizeBound = this.onResize.bind(this); // Сохраняем привязанную функцию
-        window.addEventListener('resize', this.onResizeBound);
-    }
+      // Обновляем параметры сцены
+      this.renderer.toneMappingExposure = this.debugParams.environmentMapIntensity;
+      this.ambientLight.intensity = this.debugParams.ambientLightIntensity;
+      this.directionalLight.intensity = this.debugParams.directionalLightIntensity;
 
-    onResize() {
-        this.sizes.width = window.innerWidth;
-        this.sizes.height = window.innerHeight;
+      if (typeof tickCallback === 'function') {
+        tickCallback(elapsedTime);
+      }
 
-        if(this.camera) {
-            this.camera.aspect = this.sizes.width / this.sizes.height;
-            this.camera.updateProjectionMatrix();
-        }
+      if (this.directionalLightHelper.visible) {
+        this.directionalLightHelper.update();
+      }
 
-        if(this.renderer) {
-            this.renderer.setSize(this.sizes.width, this.sizes.height);
-            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        }
-    }
+      this.renderer.render(this.scene, this.camera);
+      window.requestAnimationFrame(tick);
+    };
 
-    update() {
-        // --- УДАЛЕНО: Обновление controls.update() ---
-        // if (this.controls && this.controls.enabled) {
-        //     this.controls.update();
-        // }
+    tick();
+  }
 
-        // Обновляем хелпер, если он видим
-        if (this.directionalLightHelper && this.directionalLightHelper.visible) {
-            this.directionalLightHelper.update();
-        }
-
-        // Обновление параметров из GUI (можно убрать, если обновлять только по onChange)
-        // Но оставим для надежности, если значение изменится не через GUI
-        if(this.ambientLight) this.ambientLight.intensity = this.debugParams.ambientLightIntensity;
-        if(this.directionalLight) this.directionalLight.intensity = this.debugParams.directionalLightIntensity;
-        if(this.renderer) this.renderer.toneMappingExposure = this.debugParams.environmentMapIntensity;
-
-        // Рендерим сцену
-        if (this.renderer && this.scene && this.camera) {
-            this.renderer.render(this.scene, this.camera);
-        }
-    }
-
-    // Геттеры
-    getScene() { return this.scene; }
-    getCamera() { return this.camera; }
-    getRenderer() { return this.renderer; }
-    // --- УДАЛЕНО: getControls() ---
+  init() {
+    this.initCamera();
+    this.initRenderer();
+    this.initLights();
+    this.initGUI();
+    this.initEnvironment();
+    this.initResize();
+  }
 }
