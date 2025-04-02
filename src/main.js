@@ -1,101 +1,69 @@
-// src/main.js
+// main.js
 import * as THREE from 'three';
 import GUI from 'lil-gui';
 import { SceneManager } from './SceneManager.js';
 import { CrownObject } from './CrownObject.js';
 
-// --- GUI ---
-const gui = new GUI();
-gui.title("Управление Сценой и Объектом");
-// gui.close(); // Можно закрыть по умолчанию
-
-// --- Основные настройки ---
+// --- Инициализация ---
 const canvas = document.querySelector('canvas.webgl');
-if (!canvas) {
-    console.error("Canvas element not found!");
-    // Можно добавить создание canvas здесь, если нужно
-}
+const gui = new GUI();
+gui.title("Настройки Сцены");
+// gui.close(); // Раскомментируйте, если нужно закрыть по умолчанию
 
-// --- Инициализация менеджеров ---
-const sceneManager = new SceneManager(canvas, gui);
-const crownObject = new CrownObject(null, gui); // Передаем null для scene пока, он установится в SceneManager
+// Создаем менеджер сцены
+const sceneManager = new SceneManager(canvas);
 
-// --- Глобальные переменные для доступа (если нужны вне классов) ---
-let globalScene, globalCamera, globalRenderer;
+// Создаем объект короны, передаем сцену и размеры
+const crown = new CrownObject(sceneManager.getScene(), sceneManager.getSizes());
 
-// --- Асинхронная инициализация ---
-async function initialize() {
-    try {
-        await sceneManager.init(); // Инициализируем сцену, камеру, свет, HDR...
-        globalScene = sceneManager.getScene();
-        globalCamera = sceneManager.getCamera();
-        globalRenderer = sceneManager.getRenderer();
+// --- Настройка GUI ---
+sceneManager.setupGUI(gui);
+// GUI для короны будет настроен после ее загрузки (см. ниже)
 
-        // Передаем созданную сцену в объект короны
-        crownObject.scene = globalScene;
-        await crownObject.init(); // Инициализируем (загружаем) модель короны
-
-        // --- Настройка слушателей событий ПОСЛЕ инициализации ---
-        setupEventListeners();
-
-        // --- Запуск анимационного цикла ---
-        tick();
-
-        console.log("Initialization complete. Starting animation loop.");
-
-    } catch (error) {
-        console.error("Initialization failed:", error);
-        // Можно показать сообщение об ошибке пользователю
-    }
-}
-
-// --- Отслеживание мыши ---
-const mouse = { x: 0, y: 0 }; // Нормализованные координаты
-
-function setupEventListeners() {
-    // Обновляем обработчик мыши
-    window.addEventListener('mousemove', (event) => {
-        if (!crownObject.getModel()) return; // Не обновляем, если модели еще нет
-
-        // Нормализуем координаты мыши от -1 до 1
-        mouse.x = (event.clientX / sceneManager.sizes.width) * 2 - 1;
-        mouse.y = -(event.clientY / sceneManager.sizes.height) * 2 + 1;
-
-        // Передаем нормализованные координаты в объект короны
-        crownObject.updateTargetRotation(mouse.x, mouse.y);
-    });
-
-    // Добавляем примеры триггеров для hide/show (например, по клавишам H и S)
-    window.addEventListener('keydown', (event) => {
-        if (event.key === 'h' || event.key === 'H') {
-            crownObject.hide();
-        } else if (event.key === 's' || event.key === 'S') {
-            crownObject.show();
-        }
-    });
-
-    // Ресайз обрабатывается внутри SceneManager через его собственный листенер
-}
-
-
-// --- Анимационный цикл ---
+// --- Загрузка модели и старт анимации ---
 const clock = new THREE.Clock();
 
+// Функция анимации
 const tick = () => {
-    // Запрашиваем следующий кадр
+    // Обновляем состояние сцены (свет, экспозиция)
+    sceneManager.update();
+
+    // Обновляем состояние короны (вращение)
+    crown.update();
+
+    // Рендеринг
+    sceneManager.getRenderer().render(sceneManager.getScene(), sceneManager.getCamera());
+
+    // Запрос следующего кадра
     window.requestAnimationFrame(tick);
-
-    const elapsedTime = clock.getElapsedTime();
-
-    // Обновляем SceneManager (OrbitControls, хелперы, рендер)
-    sceneManager.update(); // SceneManager теперь сам рендерит сцену
-
-    // Обновляем CrownObject (применение вращения)
-    crownObject.update();
-
-    // Рендеринг теперь происходит внутри sceneManager.update()
-    // renderer.render(scene, camera); <-- Больше не нужно здесь
 };
 
-// --- Запуск инициализации ---
-initialize();
+// Загружаем модель короны. Когда загрузка завершится,
+// настраиваем ее GUI и запускаем цикл анимации tick()
+crown.loadModel('models/crown.gltf', (loadedCrown) => {
+    // Настраиваем GUI для короны ТЕПЕРЬ, когда модель загружена
+    loadedCrown.setupGUI(gui);
+
+    // Запускаем анимационный цикл ТОЛЬКО ПОСЛЕ загрузки модели
+    console.log("Модель загружена, запускаем анимацию...");
+    tick();
+    // --- НОВОЕ: Добавляем слушатель клика на все окно ---
+    let f = 0
+    window.addEventListener('click', () => {
+        console.log('Window clicked - triggering hide animation.');
+        // Вызываем метод hide у ЗАГРУЖЕННОГО объекта короны
+        // Устанавливаем продолжительность анимации, например, 1.5 секунды
+        if (f == 0) {
+            loadedCrown.hide(1.1);
+            f = 1
+        } else {
+            loadedCrown.show(1.1);
+            f = 0
+        }
+       
+    });
+    // --- Конец нового кода ---
+});
+
+// Опционально: можно добавить начальное сообщение в консоль
+console.log("Инициализация завершена, ожидание загрузки модели...");
