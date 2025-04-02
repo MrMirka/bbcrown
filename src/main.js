@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader.js'; // <--- Импорт EXRLoader
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+// Удалён импорт OrbitControls
 import { DirectionalLightHelper } from 'three';
 import gsap from 'gsap';
 import GUI from 'lil-gui';
@@ -37,10 +37,6 @@ exrLoader.load(
         // Это повлияет на освещение и отражения PBR материалов (как в GLTF)
         scene.environment = environmentMap;
 
-        // Обновляем интенсивность окружения через exposure рендерера
-        // Мы управляем этим через debugParams.environmentMapIntensity в tick()
-        // renderer.toneMappingExposure = debugParams.environmentMapIntensity; // Установим начальное значение в tick
-
         console.log('Карта окружения EXR загружена и применена.');
 
         // Добавляем контроль интенсивности окружения в GUI
@@ -59,7 +55,6 @@ exrLoader.load(
         // Если есть ошибка, модель может остаться темной!
     }
 );
-
 
 // --- Размеры окна ---
 const sizes = {
@@ -150,11 +145,6 @@ gltfLoader.load(
             if (child.isMesh) {
                 child.castShadow = true;
                 child.receiveShadow = true;
-                // --- Отладка: Проверка материала ---
-                // console.log('Материал меша:', child.material);
-                // Если модель черная, возможно проблема с материалом или UV
-                // Можно временно заменить материал для теста:
-                // child.material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0.5 });
             }
         });
 
@@ -209,12 +199,6 @@ if (!gui.folders.find(f => f._title === 'Рендеринг')) {
            });
 }
 
-// --- Orbit Controls ---
-const controls = new OrbitControls(camera, canvas);
-controls.enableDamping = true;
-controls.enabled = true;
-// controls.target.set(0, 0, 0); // Убедитесь, что камера смотрит на центр, где модель
-
 // --- Отслеживание мыши ---
 const mouse = { x: 0, y: 0 };
 const targetRotation = { x: 0, y: 0 };
@@ -226,7 +210,7 @@ window.addEventListener('mousemove', (event) => {
     mouse.y = -(event.clientY / sizes.height) * 2 + 1;
     targetRotation.y = mouse.x * rotationSensitivity;
     targetRotation.x = mouse.y * rotationSensitivity;
-     gsap.to(modelAnimationTarget, {
+    gsap.to(modelAnimationTarget, {
          rotationX: targetRotation.x,
          rotationY: targetRotation.y,
          duration: rotationSmoothness,
@@ -243,38 +227,21 @@ const tick = () => {
 
     // Обновление экспозиции (на случай, если GUI инициализируется до загрузки EXR)
     // И интенсивности доп. света
-    // Это немного избыточно, но гарантирует применение значений из debugParams
     renderer.toneMappingExposure = debugParams.environmentMapIntensity;
     ambientLight.intensity = debugParams.ambientLightIntensity;
     directionalLight.intensity = debugParams.directionalLightIntensity;
 
-
-    if (controls.enabled) {
-        controls.update(); // Обновляем OrbitControls
-    }
-
     // Применение вращения от мыши
-    if (model && controls.enabled) {
+    if (model) {
          // Плавная интерполяция к целевому вращению от мыши
-         // Этот способ лучше работает с OrbitControls, чем прямое сложение
-         const lerpFactor = 0.1;
-         model.rotation.x += (modelAnimationTarget.rotationX - model.rotation.x) * lerpFactor;
-         model.rotation.y += (modelAnimationTarget.rotationY - model.rotation.y) * lerpFactor;
-    } else if (model && !controls.enabled) {
-         // Если OrbitControls выключены, можно было бы напрямую применять targetRotation
-         // но текущая логика с GSAP и modelAnimationTarget тоже будет работать.
-          model.rotation.x += (modelAnimationTarget.rotationX - model.rotation.x) * 0.1;
-          model.rotation.y += (modelAnimationTarget.rotationY - model.rotation.y) * 0.1;
+         model.rotation.x += (modelAnimationTarget.rotationX - model.rotation.x) * 0.1;
+         model.rotation.y += (modelAnimationTarget.rotationY - model.rotation.y) * 0.1;
     }
 
     // Обновление хелпера
     if (directionalLightHelper.visible) {
         directionalLightHelper.update();
     }
-
-    // --- Отладка: Проверка позиций ---
-    // console.log("Camera pos:", camera.position);
-    // if(model) console.log("Model pos:", model.position);
 
     renderer.render(scene, camera);
     window.requestAnimationFrame(tick);
