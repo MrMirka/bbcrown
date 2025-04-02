@@ -1,9 +1,7 @@
-// src/main.js
 
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader.js'; // <--- Импорт EXRLoader
-// Удалён импорт OrbitControls
+import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader.js'; 
 import { DirectionalLightHelper } from 'three';
 import gsap from 'gsap';
 import GUI from 'lil-gui';
@@ -29,7 +27,7 @@ const debugParams = {
 // --- Загрузчик EXR для карты окружения ---
 const exrLoader = new EXRLoader();
 exrLoader.load(
-    'textures/GSG_ProStudiosMetal_Vol2_24_Env_sm.exr', // <-- УБЕДИТЕСЬ, что путь ВЕРНЫЙ
+    'textures/GSG_ProStudiosMetal_Vol2_24_Env_sm.exr', 
     ( environmentMap ) => {
         environmentMap.mapping = THREE.EquirectangularReflectionMapping; // <-- Важно для карт окружения
 
@@ -115,8 +113,6 @@ const directionalPositionFolder = directionalFolder.addFolder('Положени�
 directionalPositionFolder.add(directionalLight.position, 'x').min(-20).max(20).step(0.1).name('X');
 directionalPositionFolder.add(directionalLight.position, 'y').min(-20).max(20).step(0.1).name('Y');
 directionalPositionFolder.add(directionalLight.position, 'z').min(-20).max(20).step(0.1).name('Z');
-// directionalPositionFolder.close();
-// directionalFolder.close();
 lightFolder.close(); // Свернем папку доп. света
 
 // --- Загрузчик GLTF ---
@@ -126,7 +122,7 @@ const modelFolder = gui.addFolder('Модель');
 let modelAnimationTarget = { rotationX: 0, rotationY: 0 };
 
 gltfLoader.load(
-    'models/crown.gltf', // <-- УБЕДИТЕСЬ, что путь к МОДЕЛИ верный
+    'models/crown.gltf', 
     (gltf) => {
         console.log('Модель успешно загружена');
         model = gltf.scene;
@@ -148,7 +144,7 @@ gltfLoader.load(
             }
         });
 
-        // model.scale.set(0.1, 0.1, 0.1); // <-- Раскомментируйте и настройте, если модель СЛИШКОМ БОЛЬШАЯ
+       
         model.position.set(0, 0, 0); // Центрируем модель (если ее центр не 0,0,0, настройте)
         scene.add(model);
 
@@ -246,6 +242,3 @@ const tick = () => {
     renderer.render(scene, camera);
     window.requestAnimationFrame(tick);
 };
-
-// Важно: tick() вызывается только внутри колбэка загрузчика GLTF
-// после УСПЕШНОЙ загрузки модели.
