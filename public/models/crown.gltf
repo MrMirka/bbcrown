@@ -3,6 +3,12 @@
 		"generator":"Khronos glTF Blender I/O v4.2.57",
 		"version":"2.0"
 	},
+	"extensionsUsed":[
+		"KHR_texture_transform"
+	],
+	"extensionsRequired":[
+		"KHR_texture_transform"
+	],
 	"scene":0,
 	"scenes":[
 		{
@@ -133,6 +139,21 @@
 		{
 			"doubleSided":true,
 			"name":"Base_Metal",
+			"normalTexture":{
+				"extensions":{
+					"KHR_texture_transform":{
+						"offset":[
+							0,
+							-1
+						],
+						"scale":[
+							2,
+							2
+						]
+					}
+				},
+				"index":0
+			},
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
 					0.040008798241615295,
@@ -282,6 +303,19 @@
 					"material":0
 				}
 			]
+		}
+	],
+	"textures":[
+		{
+			"sampler":0,
+			"source":0
+		}
+	],
+	"images":[
+		{
+			"mimeType":"image/png",
+			"name":"Norm_05_1024px_01",
+			"uri":"Norm_05_1024px_01.png"
 		}
 	],
 	"accessors":[
@@ -594,7 +628,7 @@
 		{
 			"bufferView":36,
 			"componentType":5126,
-			"count":3456,
+			"count":2409,
 			"max":[
 				0.7890207767486572,
 				0.4357985258102417,
@@ -610,19 +644,19 @@
 		{
 			"bufferView":37,
 			"componentType":5126,
-			"count":3456,
+			"count":2409,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":38,
 			"componentType":5126,
-			"count":3456,
+			"count":2409,
 			"type":"VEC2"
 		},
 		{
 			"bufferView":39,
 			"componentType":5123,
-			"count":20736,
+			"count":9072,
 			"type":"SCALAR"
 		}
 	],
@@ -845,32 +879,38 @@
 		},
 		{
 			"buffer":0,
-			"byteLength":41472,
+			"byteLength":28908,
 			"byteOffset":404556,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":41472,
-			"byteOffset":446028,
+			"byteLength":28908,
+			"byteOffset":433464,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":27648,
-			"byteOffset":487500,
+			"byteLength":19272,
+			"byteOffset":462372,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":41472,
-			"byteOffset":515148,
+			"byteLength":18144,
+			"byteOffset":481644,
 			"target":34963
+		}
+	],
+	"samplers":[
+		{
+			"magFilter":9729,
+			"minFilter":9987
 		}
 	],
 	"buffers":[
 		{
-			"byteLength":556620,
+			"byteLength":499788,
 			"uri":"crown.bin"
 		}
 	]

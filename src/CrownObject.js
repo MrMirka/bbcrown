@@ -67,7 +67,7 @@ export class CrownObject {
 
             // Расчет целевого поворота напрямую из координат мыши
             this.targetRotation.y = this.mouse.x * this.rotationSensitivity;
-            this.targetRotation.x = this.mouse.y * this.rotationSensitivity;
+            this.targetRotation.x = -this.mouse.y * this.rotationSensitivity;
 
             // Запускаем GSAP анимацию для плавного перехода к целевому повороту
             gsap.to(this.modelAnimationTarget, {
@@ -124,7 +124,7 @@ export class CrownObject {
       // Зависит от настроек камеры (FOV, position). Значение 5-10 обычно достаточно.
       // Можно сделать более точный расчет через THREE.Vector3.project(camera),
       // но для простого эффекта "скрытия" подойдет и константа.
-      const targetY = 6; // Поднимаем достаточно высоко
+      const targetY = 3; // Поднимаем достаточно высоко
 
       gsap.to(this.model.position, {
           y: targetY,
