@@ -28,8 +28,8 @@ export class SceneManager {
     }
 
     _setupCamera() {
-        this.camera = new THREE.PerspectiveCamera(75, this.sizes.width / this.sizes.height, 0.1, 100);
-        this.camera.position.set(0, 1, 4);
+        this.camera = new THREE.PerspectiveCamera(35, this.sizes.width / this.sizes.height, 0.1, 100);
+        this.camera.position.set(0, 1, 6);
         this.scene.add(this.camera);
     }
 

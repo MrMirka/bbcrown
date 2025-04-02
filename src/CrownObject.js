@@ -134,6 +134,8 @@ export class CrownObject {
       });
   }
 
+
+
   show(durationSeconds) {
     if (!this.model) {
         console.warn("Модель короны не загружена, невозможно выполнить show().");
