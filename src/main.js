@@ -53,13 +53,13 @@ crown.loadModel('models/crown.gltf', (loadedCrown) => {
         console.log('Window clicked - triggering hide animation.');
         // Вызываем метод hide у ЗАГРУЖЕННОГО объекта короны
         // Устанавливаем продолжительность анимации, например, 1.5 секунды
-        if (f == 0) {
+       /*  if (f == 0) {
             loadedCrown.hide(1.1);
             f = 1
         } else {
             loadedCrown.show(1.1);
             f = 0
-        }
+        } */
        
     });
     // --- Конец нового кода ---

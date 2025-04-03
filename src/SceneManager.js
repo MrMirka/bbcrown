@@ -7,7 +7,8 @@ export class SceneManager {
     constructor(canvas) {
         this.canvas = canvas;
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x111111); // Темный фон
+        this.scene.background = null;
+        //this.scene.background = new THREE.Color(0x111111); // Темный фон
 
         this.sizes = {
             width: window.innerWidth,
@@ -36,7 +37,8 @@ export class SceneManager {
     _setupRenderer() {
         this.renderer = new THREE.WebGLRenderer({
             canvas: this.canvas,
-            antialias: true
+            antialias: true,
+            alpha: true
         });
         this.renderer.setSize(this.sizes.width, this.sizes.height);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));

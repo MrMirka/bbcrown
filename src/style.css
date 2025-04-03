@@ -9,6 +9,7 @@ body {
   overflow: hidden; /* Убираем скроллбары */
   height: 100%; /* Занимаем всю высоту */
   width: 100%; /* Занимаем всю ширину */
+  background-color: rgb(0, 0, 0);
 }
 
 .webgl {
