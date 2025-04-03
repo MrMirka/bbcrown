@@ -8,7 +8,8 @@ export class SceneManager {
         this.canvas = canvas;
         this.scene = new THREE.Scene();
         this.scene.background = null;
-        //this.scene.background = new THREE.Color(0x111111); // Темный фон
+        // Инициализируем вращение окружения
+        this.scene.environmentRotation = new THREE.Euler(); // По умолчанию (0, 0, 0)
 
         this.sizes = {
             width: window.innerWidth,
@@ -17,6 +18,10 @@ export class SceneManager {
 
         this.debugParams = {
             environmentMapIntensity: 5.0,
+            // --- НОВОЕ: Параметры для вращения по X, Y, Z в радианах ---
+            environmentRotationX: 0,
+            environmentRotationY: 0,
+            environmentRotationZ: 0,
             ambientLightIntensity: 0.2,
             directionalLightIntensity: 0.5,
         };
@@ -46,9 +51,8 @@ export class SceneManager {
         // Настройки рендеринга
         this.renderer.outputEncoding = THREE.sRGBEncoding;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        //this.renderer.toneMappingExposure = this.debugParams.environmentMapIntensity;
-        this.renderer.toneMappingExposure = 5
-        this.renderer.physicallyCorrectLights = true;
+        this.renderer.toneMappingExposure = this.debugParams.environmentMapIntensity;
+        this.renderer.useLegacyLights = false;
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     }
@@ -70,7 +74,7 @@ export class SceneManager {
 
         this.directionalLightHelper = new DirectionalLightHelper(this.directionalLight, 0.5, 0xffff00);
         this.scene.add(this.directionalLightHelper);
-        this.directionalLightHelper.visible = false; // Скрыт по умолчанию
+        this.directionalLightHelper.visible = false;
     }
 
     _loadEnvironmentMap() {
@@ -80,8 +84,13 @@ export class SceneManager {
             (environmentMap) => {
                 environmentMap.mapping = THREE.EquirectangularReflectionMapping;
                 this.scene.environment = environmentMap;
+                // --- НОВОЕ: Устанавливаем начальное вращение по всем осям ---
+                this.scene.environmentRotation.set(
+                    this.debugParams.environmentRotationX,
+                    this.debugParams.environmentRotationY,
+                    this.debugParams.environmentRotationZ
+                );
                 console.log('Карта окружения EXR загружена и применена.');
-                // Вызываем колбэк, если он есть (для GUI)
                 if (this.onEnvironmentLoaded) {
                     this.onEnvironmentLoaded();
                 }
@@ -107,28 +116,29 @@ export class SceneManager {
     }
 
     // --- Публичные методы ---
-
-    getScene() {
-        return this.scene;
-    }
-
-    getCamera() {
-        return this.camera;
-    }
-
-    getRenderer() {
-        return this.renderer;
-    }
-
-    getSizes() {
-        return this.sizes;
-    }
+    getScene() { return this.scene; }
+    getCamera() { return this.camera; }
+    getRenderer() { return this.renderer; }
+    getSizes() { return this.sizes; }
 
     update() {
         // Обновление параметров на основе debugParams
         this.renderer.toneMappingExposure = this.debugParams.environmentMapIntensity;
         this.ambientLight.intensity = this.debugParams.ambientLightIntensity;
         this.directionalLight.intensity = this.debugParams.directionalLightIntensity;
+
+        // --- НОВОЕ: Обновляем вращение окружения по всем осям в каждом кадре ---
+        if (this.scene.environment) { // Проверяем, что карта загружена
+            this.scene.environmentRotation.set(
+                this.debugParams.environmentRotationX,
+                this.debugParams.environmentRotationY,
+                this.debugParams.environmentRotationZ
+            );
+            // Альтернативно, можно обновлять по одной оси, если нужно
+            // this.scene.environmentRotation.x = this.debugParams.environmentRotationX;
+            // this.scene.environmentRotation.y = this.debugParams.environmentRotationY;
+            // this.scene.environmentRotation.z = this.debugParams.environmentRotationZ;
+        }
 
         // Обновление хелпера
         if (this.directionalLightHelper.visible) {
@@ -137,17 +147,36 @@ export class SceneManager {
     }
 
     setupGUI(gui) {
-        const renderingFolder = gui.addFolder('Рендеринг');
-        const envIntensityControl = renderingFolder.add(this.debugParams, 'environmentMapIntensity')
-                       .min(5).max(15).step(0.01)
+        const renderingFolder = gui.addFolder('Рендеринг и Окружение'); // Переименуем для ясности
+        renderingFolder.add(this.debugParams, 'environmentMapIntensity')
+                       .min(0).max(15).step(0.01)
                        .name('Яркость окружения (exp)');
-        // Убедимся, что контрол создается, даже если карта еще не загружена
+
+        // --- НОВОЕ: Папка для вращения окружения ---
+        const envRotationFolder = renderingFolder.addFolder('Вращение Окружения');
+        envRotationFolder.add(this.debugParams, 'environmentRotationX')
+                       .min(0).max(Math.PI * 2).step(0.01)
+                       .name('Вращение X (радианы)')
+                       .onChange(this._updateEnvironmentRotation.bind(this)); // Связываем onChange
+
+        envRotationFolder.add(this.debugParams, 'environmentRotationY')
+                       .min(0).max(Math.PI * 2).step(0.01)
+                       .name('Вращение Y (радианы)')
+                       .onChange(this._updateEnvironmentRotation.bind(this)); // Связываем onChange
+
+        envRotationFolder.add(this.debugParams, 'environmentRotationZ')
+                       .min(0).max(Math.PI * 2).step(0.01)
+                       .name('Вращение Z (радианы)')
+                       .onChange(this._updateEnvironmentRotation.bind(this)); // Связываем onChange
+
          if (!this.scene.environment) {
              this.onEnvironmentLoaded = () => {
-                 // Можно обновить контрол или просто убедиться, что он работает
-                 // В данном случае, так как он связан с debugParams, он уже должен работать
-                 console.log('GUI: Окружение загружено, контрол яркости активен.');
+                 console.log('GUI: Окружение загружено, контролы рендеринга активны.');
+                 this._updateEnvironmentRotation(); // Применяем начальные значения вращения из GUI
              };
+         } else {
+            // Если карта уже была загружена до вызова setupGUI
+            this._updateEnvironmentRotation();
          }
 
 
@@ -172,5 +201,17 @@ export class SceneManager {
         directionalPositionFolder.add(this.directionalLight.position, 'x').min(-20).max(20).step(0.1).name('X');
         directionalPositionFolder.add(this.directionalLight.position, 'y').min(-20).max(20).step(0.1).name('Y');
         directionalPositionFolder.add(this.directionalLight.position, 'z').min(-20).max(20).step(0.1).name('Z');
+    }
+
+    // --- НОВЫЙ вспомогательный метод для обновления вращения ---
+    // (Используется в onChange и при загрузке)
+    _updateEnvironmentRotation() {
+        if (this.scene.environment) {
+            this.scene.environmentRotation.set(
+                this.debugParams.environmentRotationX,
+                this.debugParams.environmentRotationY,
+                this.debugParams.environmentRotationZ
+            );
+        }
     }
 }
