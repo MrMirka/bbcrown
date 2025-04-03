@@ -16,7 +16,7 @@ export class SceneManager {
         };
 
         this.debugParams = {
-            environmentMapIntensity: 1.0,
+            environmentMapIntensity: 5.0,
             ambientLightIntensity: 0.2,
             directionalLightIntensity: 0.5,
         };
@@ -46,7 +46,8 @@ export class SceneManager {
         // Настройки рендеринга
         this.renderer.outputEncoding = THREE.sRGBEncoding;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = this.debugParams.environmentMapIntensity;
+        //this.renderer.toneMappingExposure = this.debugParams.environmentMapIntensity;
+        this.renderer.toneMappingExposure = 5
         this.renderer.physicallyCorrectLights = true;
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -138,7 +139,7 @@ export class SceneManager {
     setupGUI(gui) {
         const renderingFolder = gui.addFolder('Рендеринг');
         const envIntensityControl = renderingFolder.add(this.debugParams, 'environmentMapIntensity')
-                       .min(0).max(5).step(0.01)
+                       .min(5).max(15).step(0.01)
                        .name('Яркость окружения (exp)');
         // Убедимся, что контрол создается, даже если карта еще не загружена
          if (!this.scene.environment) {
