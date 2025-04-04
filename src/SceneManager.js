@@ -18,7 +18,6 @@ export class SceneManager {
 
         this.debugParams = {
             environmentMapIntensity: 7.0,
-            // --- НОВОЕ: Параметры для вращения по X, Y, Z в радианах ---
             environmentRotationX: 0,
             environmentRotationY: 1.4,
             environmentRotationZ: 0,
@@ -84,7 +83,7 @@ export class SceneManager {
             (environmentMap) => {
                 environmentMap.mapping = THREE.EquirectangularReflectionMapping;
                 this.scene.environment = environmentMap;
-                // --- НОВОЕ: Устанавливаем начальное вращение по всем осям ---
+                // Устанавливаем начальное вращение по всем осям ---
                 this.scene.environmentRotation.set(
                     this.debugParams.environmentRotationX,
                     this.debugParams.environmentRotationY,
@@ -127,7 +126,7 @@ export class SceneManager {
         this.ambientLight.intensity = this.debugParams.ambientLightIntensity;
         this.directionalLight.intensity = this.debugParams.directionalLightIntensity;
 
-        // --- НОВОЕ: Обновляем вращение окружения по всем осям в каждом кадре ---
+        // Обновляем вращение окружения по всем осям в каждом кадре ---
         if (this.scene.environment) { // Проверяем, что карта загружена
             this.scene.environmentRotation.set(
                 this.debugParams.environmentRotationX,
@@ -152,7 +151,7 @@ export class SceneManager {
                        .min(0).max(15).step(0.01)
                        .name('Яркость окружения (exp)');
 
-        // --- НОВОЕ: Папка для вращения окружения ---
+        //Папка для вращения окружения ---
         const envRotationFolder = renderingFolder.addFolder('Вращение Окружения');
         envRotationFolder.add(this.debugParams, 'environmentRotationX')
                        .min(0).max(Math.PI * 2).step(0.01)
@@ -203,7 +202,7 @@ export class SceneManager {
         directionalPositionFolder.add(this.directionalLight.position, 'z').min(-20).max(20).step(0.1).name('Z');
     }
 
-    // --- НОВЫЙ вспомогательный метод для обновления вращения ---
+    // вспомогательный метод для обновления вращения ---
     // (Используется в onChange и при загрузке)
     _updateEnvironmentRotation() {
         if (this.scene.environment) {
