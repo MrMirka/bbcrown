@@ -17,10 +17,10 @@ export class SceneManager {
         };
 
         this.debugParams = {
-            environmentMapIntensity: 5.0,
+            environmentMapIntensity: 7.0,
             // --- НОВОЕ: Параметры для вращения по X, Y, Z в радианах ---
             environmentRotationX: 0,
-            environmentRotationY: 0,
+            environmentRotationY: 1.4,
             environmentRotationZ: 0,
             ambientLightIntensity: 0.2,
             directionalLightIntensity: 0.5,
